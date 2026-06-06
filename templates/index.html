@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HumanFacePose-AI</title>
+  <style>
+    :root{
+      --bg:#07111f; --panel:rgba(10,18,32,.84); --line:rgba(255,255,255,.10);
+      --text:#eef4ff; --muted:#a8b6d3; --accent:#4ea1ff; --good:#27d17f; --warn:#ffcf5a;
+      --bad:#ff5f6d; --shadow:0 24px 80px rgba(0,0,0,.36); --r:22px;
+    }
+    *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      color:var(--text); background:radial-gradient(circle at top, rgba(78,161,255,.18), transparent 26%), linear-gradient(180deg,#07111f,#03070f);
+    }
+    .wrap{max-width:1200px;margin:0 auto;padding:18px}
+    .hero{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 0 18px}
+    h1{margin:0;font-size:clamp(26px,3vw,40px);letter-spacing:-.03em}
+    p{margin:6px 0 0;color:var(--muted)}
+    .pill{padding:10px 14px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.05);color:var(--muted)}
+    .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
+    .card{background:linear-gradient(180deg, rgba(18,26,42,.84), rgba(10,16,28,.78));
+      border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);backdrop-filter:blur(16px);}
+    .hd{padding:16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:center}
+    .bd{padding:16px}
+    .drop{border:1.5px dashed rgba(255,255,255,.22);border-radius:18px;padding:18px;text-align:center;background:rgba(255,255,255,.04)}
+    .slots{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:12px}
+    .slot{border:1px solid var(--line);border-radius:16px;padding:10px;background:rgba(255,255,255,.04)}
+    .slot label{display:block;font-size:12px;color:var(--muted);margin-bottom:8px}
+    .slot input{width:100%}
+    input[type=file]{width:100%;color:var(--muted)}
+    button{border:none;border-radius:14px;padding:12px 16px;font-weight:700;cursor:pointer;color:white;background:linear-gradient(180deg,#4ea1ff,#347bff)}
+    button.secondary{background:rgba(255,255,255,.07);border:1px solid var(--line)}
+    .btnrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+    .result{display:grid;gap:10px}
+    .stat{background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:16px;padding:12px}
+    .stat b{display:block;font-size:22px;margin-bottom:4px}
+    .meter{height:12px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid var(--line);overflow:hidden}
+    .meter>div{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#7f8cff)}
+    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:12px}
+    .rCard{border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.04);overflow:hidden}
+    .rCard img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block}
+    .rCard .info{padding:10px;font-size:12px;color:var(--muted)}
+    pre{white-space:pre-wrap;word-break:break-word;background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:16px;padding:12px;overflow:auto;color:#dbe8ff}
+    @media (max-width: 980px){ .grid{grid-template-columns:1fr} .slots{grid-template-columns:1fr 1fr} }
+    @media (max-width: 640px){ .slots{grid-template-columns:1fr} .hero{flex-direction:column;align-items:flex-start} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <div>
+        <h1>HumanFacePose-AI</h1>
+        <p>อัปโหลด 5 รูป: หน้าตรง, เงยขึ้น, ก้มลง, หันซ้าย, หันขวา แล้วให้ระบบประเมินเป็นเปอร์เซ็นต์</p>
+      </div>
+      <div class="pill">ไม่ใช้วิดีโอ · ประเมินจากภาพนิ่งเท่านั้น</div>
+    </div>
+
+    <div class="grid">
+      <section class="card">
+        <div class="hd"><strong>อัปโหลดรูป</strong><span class="pill" id="status">พร้อมใช้งาน</span></div>
+        <div class="bd">
+          <form id="form">
+            <div class="slots">
+              <div class="slot"><label>หน้าตรง</label><input type="file" name="front" accept="image/*" required></div>
+              <div class="slot"><label>เงยขึ้น</label><input type="file" name="up" accept="image/*" required></div>
+              <div class="slot"><label>ก้มลง</label><input type="file" name="down" accept="image/*" required></div>
+              <div class="slot"><label>หันซ้าย</label><input type="file" name="left" accept="image/*" required></div>
+              <div class="slot"><label>หันขวา</label><input type="file" name="right" accept="image/*" required></div>
+            </div>
+            <div class="btnrow">
+              <button type="submit">วิเคราะห์ภาพ</button>
+              <button type="button" class="secondary" id="clearBtn">ล้างไฟล์</button>
+            </div>
+          </form>
+          <div style="margin-top:14px">
+            <div class="meter"><div id="meter"></div></div>
+            <p id="summary" style="margin-top:10px">รอการวิเคราะห์</p>
+          </div>
+        </div>
+      </section>
+
+      <aside class="card">
+        <div class="hd"><strong>ผลลัพธ์</strong><span class="pill" id="overallText">0%</span></div>
+        <div class="bd result">
+          <div class="stat"><b id="completeness">0%</b><div>ความครบของภาพ 5 มุม</div></div>
+          <div class="stat"><b id="meanScore">0%</b><div>คะแนนเฉลี่ยรายภาพ</div></div>
+          <div class="stat"><b id="statusText">-</b><div>สถานะรวม</div></div>
+          <div>
+            <strong>รายละเอียดแต่ละภาพ</strong>
+            <div class="cards" id="cards"></div>
+          </div>
+          <div>
+            <strong>JSON</strong>
+            <pre id="jsonOut">{}</pre>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+<script>
+const form = document.getElementById('form');
+const statusEl = document.getElementById('status');
+const meter = document.getElementById('meter');
+const summary = document.getElementById('summary');
+const overallText = document.getElementById('overallText');
+const completeness = document.getElementById('completeness');
+const meanScore = document.getElementById('meanScore');
+const statusText = document.getElementById('statusText');
+const cards = document.getElementById('cards');
+const jsonOut = document.getElementById('jsonOut');
+const clearBtn = document.getElementById('clearBtn');
+
+clearBtn.addEventListener('click', () => {
+  form.reset();
+  cards.innerHTML = '';
+  jsonOut.textContent = '{}';
+  summary.textContent = 'รอการวิเคราะห์';
+  overallText.textContent = '0%';
+  completeness.textContent = '0%';
+  meanScore.textContent = '0%';
+  statusText.textContent = '-';
+  meter.style.width = '0%';
+  statusEl.textContent = 'พร้อมใช้งาน';
+});
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  statusEl.textContent = 'กำลังวิเคราะห์...';
+  summary.textContent = 'กำลังส่งภาพไปวิเคราะห์';
+  cards.innerHTML = '';
+
+  const fd = new FormData(form);
+  const res = await fetch('/api/analyze', { method: 'POST', body: fd });
+  const data = await res.json();
+
+  statusEl.textContent = 'เสร็จแล้ว';
+  overallText.textContent = `${data.overall}%`;
+  completeness.textContent = `${data.completeness}%`;
+  meanScore.textContent = `${data.mean_score}%`;
+  statusText.textContent = data.status;
+  meter.style.width = `${data.overall}%`;
+  summary.textContent = data.note || 'วิเคราะห์เสร็จแล้ว';
+  jsonOut.textContent = JSON.stringify(data, null, 2);
+
+  (data.results || []).forEach(item => {
+    const el = document.createElement('div');
+    el.className = 'rCard';
+    el.innerHTML = `
+      ${item.preview ? `<img src="data:image/jpeg;base64,${item.preview}" alt="${item.label}">` : ''}
+      <div class="info">
+        <b>${item.label}</b><br>
+        score: ${item.score}%<br>
+        status: ${item.status}<br>
+        face: ${item.face_detected ? 'yes' : 'no'}
+      </div>`;
+    cards.appendChild(el);
+  });
+});
+</script>
+</body>
+</html>
